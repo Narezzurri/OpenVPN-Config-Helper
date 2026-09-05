@@ -1,3 +1,5 @@
+set (EXES CHECKER AUTH)
+set (APPLIST "OCM.Checker;OCM.Auth")
 # Target name
 set (CHECKER_NAME "Checker")
 set (AUTH_NAME "Auth")
@@ -29,7 +31,6 @@ include_directories (.)
 
 add_library (lib STATIC lib.cpp)
 
-set (EXES CHECKER AUTH)
 foreach (EXE ${EXES})
 	set (OBJ ${${EXE}_NAME})
 	add_executable ("${OBJ}" "${CMAKE_CURRENT_SOURCE_DIR}/${${EXE}_DIR}/${OBJ}.cpp")

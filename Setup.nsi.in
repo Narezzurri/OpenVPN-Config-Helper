@@ -1,7 +1,10 @@
 ﻿!define NAME "OpenVPN Config Manager"
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NAME}"
+!define DIRMENU_KEY "Directory\shell\OpenVPN Config Manager"
+!define CMDMENU_KEY "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell"
 
 !addincludedir "@CMAKE_SOURCE_DIR@"
+!include "LogicLib.nsh"
 !include "MUI2.nsh"
 !include "lib.nsh"
 
@@ -31,9 +34,9 @@ ShowUnInstDetails show
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 !define MUI_FINISHPAGE_LINK "Propose issues on Github"
 !define MUI_FINISHPAGE_LINK_LOCATION "https://github.com/Narezzurri/OpenVPN-Config-Manager/issues"
-!insertmacro Mui_Unpage_Finish
+!insertmacro MUI_UNPAGE_FINISH
 
-!insertmacro Mui_Language "English"
+!insertmacro MUI_LANGUAGE "English"
 
 Section "install"
 ; Program files
@@ -57,8 +60,19 @@ CreateShortCut "$SMPROGRAMS\${NAME}\Uninstall.lnk" $INSTDIR\Uninstall.exe
 ; Add to PATH
 Push "$INSTDIR"
 Call AddToPath
+; Add to right-click menu
+SetRegView 64
+WriteRegStr "HKCR" "${DIRMENU_KEY}" "MUIVerb" "OpenVPN Config Manager"
+WriteRegStr "HKCR" "${DIRMENU_KEY}" "SubCommands" "@APPLIST@"
+!macro Register APP APP_NAME
+	WriteRegStr "HKLM" "${CMDMENU_KEY}\OCM.${APP}" "" "${APP_NAME}"
+	WriteRegStr "HKLM" "${CMDMENU_KEY}\OCM.${APP}" "Icon" "$INSTDIR\${APP}.exe"
+	WriteRegStr "HKLM" "${CMDMENU_KEY}\OCM.${APP}\command" "" "$INSTDIR\${APP}.exe %V\*.ovpn"
+!macroend
+!insertmacro Register "Checker" "Checker"
+!insertmacro Register "Auth" "Authenticator"
 ; Uninstall information
-SetRegView 32
+SetRegView 64
 WriteRegStr "HKLM" "${UNINST_KEY}" "DisplayName" "${NAME}"
 WriteRegStr "HKLM" "${UNINST_KEY}" "UninstallString" "$INSTDIR\Uninstall.exe"
 WriteRegStr "HKLM" "${UNINST_KEY}" "DisplayVersion" "@PROJECT_VERSION@"
@@ -71,10 +85,15 @@ Section "uninstall"
 RMDir /r "$INSTDIR"
 ; Start Menu
 RMDir /r "$SMPROGRAMS\${NAME}"
-; Add to PATH
+; Remove from PATH
 Push "$INSTDIR"
 Call un.RemoveFromPath
+; Remove from right-click menu
+SetRegView 64
+DeleteRegKey HKCR "${DIRMENU_KEY}"
+DeleteRegKey HKLM "${CMDMENU_KEY}\OCM.Checker"
+DeleteRegKey HKLM "${CMDMENU_KEY}\OCM.Auth"
 ; Uninstall information
-SetRegView 32
+SetRegView 64
 DeleteRegKey "HKLM" "${UNINST_KEY}"
 SectionEnd
